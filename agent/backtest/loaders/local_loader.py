@@ -27,6 +27,15 @@ Example config::
         type: duckdb
         db_path: "~/data/market.duckdb"
         query: "SELECT * FROM prices WHERE ticker = 'MYINDEX'"
+
+A single ``tdx_dir`` entry (or ``tdx`` type) points at a 通达信 install root
+(the directory that contains ``vipdoc/{sh,sz,bj}/lday/*.day``). Every
+A-share symbol under that root becomes available automatically, without
+needing a per-symbol config entry. Requires the ``mootdx`` package.
+
+Example::
+
+    tdx_dir: "D:/software/new_tdx"
 """
 
 from __future__ import annotations
@@ -213,6 +222,102 @@ _READERS = {
 }
 
 
+def _tdx_symbol_to_code(symbol: str) -> str | None:
+    """Strip ``.SH/.SZ/.BJ`` suffix if present; accept bare 6-digit tickers.
+
+    Returns the pure 6-digit code that mootdx ``Reader.daily`` expects, or
+    ``None`` if the input is clearly not an A-share code.
+    """
+    upper = symbol.upper()
+    for suffix in (".SH", ".SZ", ".BJ"):
+        if upper.endswith(suffix):
+            code = symbol[: -len(suffix)]
+            return code if len(code) == 6 and code.isdigit() else None
+    return symbol if len(symbol) == 6 and symbol.isdigit() else None
+
+
+def _read_tdx_daily(tdx_dir: str, symbol: str) -> pd.DataFrame | None:
+    """Read a single ``.day`` file from a 通达信 install root via mootdx.Reader.
+
+    ``tdx_dir`` is the parent of ``vipdoc`` (e.g. ``D:/software/new_tdx``).
+    mootdx auto-detects the sh/sz/bj sub-folder from the symbol prefix.
+    """
+    return _read_tdx_bars(tdx_dir, symbol, "1D")
+
+
+# Map project intervals to mootdx.Reader method names. ``fzline`` is 5-minute
+# data (from ``vipdoc/*/fzline/*.lc5``); ``minute`` is 1-minute data (from
+# ``vipdoc/*/minline/*.lc1``). 15m/30m/1H/4H are not stored natively — we read
+# the finest source that covers the request and resample upward.
+_TDX_METHOD_FOR_INTERVAL: dict[str, str] = {
+    "1D": "daily",
+    "1m": "minute",
+    "5m": "fzline",
+    "15m": "fzline",
+    "30m": "fzline",
+    "1H": "fzline",
+    "4H": "fzline",
+}
+
+
+def _read_tdx_bars(tdx_dir: str, symbol: str, interval: str) -> pd.DataFrame | None:
+    """Read OHLCV bars for ``symbol`` at ``interval`` from a 通达信 install root.
+
+    Supports daily (``.day``), 5-minute (``.lc5``) and 1-minute (``.lc1``)
+    binaries via mootdx's Reader. Sub-daily intervals other than 1m/5m are
+    obtained by resampling the finest source (5m for 15/30m/1H/4H) at the
+    caller layer via ``_resample_to_interval``.
+    """
+    try:
+        from mootdx.reader import Reader
+    except ImportError:
+        logger.warning(
+            "local loader: tdx type requires the 'mootdx' package "
+            "(pip install mootdx)"
+        )
+        return None
+
+    code = _tdx_symbol_to_code(symbol)
+    if code is None:
+        logger.warning(
+            "local loader: %s is not a valid A-share symbol for tdx source", symbol
+        )
+        return None
+
+    method_name = _TDX_METHOD_FOR_INTERVAL.get(interval)
+    if method_name is None:
+        logger.warning(
+            "local loader: tdx source does not support interval %r for %s",
+            interval,
+            symbol,
+        )
+        return None
+
+    reader = Reader.factory(market="std", tdxdir=tdx_dir)
+    try:
+        df = getattr(reader, method_name)(symbol=code)
+    except Exception as exc:
+        logger.warning(
+            "local loader: tdx %s read failed for %s: %s", method_name, code, exc
+        )
+        return None
+
+    if df is None or df.empty:
+        return None
+
+    out = df.copy()
+    # mootdx Reader.{daily,fzline,minute} all return a DatetimeIndex named
+    # ``date`` and columns ``open/high/low/close/amount/volume``.
+    out.index = pd.to_datetime(out.index)
+    out.index.name = "trade_date"
+    for col in ("open", "high", "low", "close", "volume"):
+        out[col] = pd.to_numeric(out[col], errors="coerce")
+    out = out[["open", "high", "low", "close", "volume"]].dropna(
+        subset=["open", "high", "low", "close"]
+    )
+    return out.sort_index() if not out.empty else None
+
+
 @register
 class DataLoader:
     """Config-driven local data loader for CSV, Parquet, and DuckDB."""
@@ -224,14 +329,18 @@ class DataLoader:
     def __init__(self) -> None:
         self._config: dict[str, Any] | None = None
         self._source_by_symbol: dict[str, dict[str, Any]] = {}
+        self._tdx_dir: str | None = None
 
     def is_available(self) -> bool:
-        """Return True when the YAML config file exists and has sources."""
+        """Return True when the YAML config has ``sources`` or ``tdx_dir``."""
         config = _load_config()
         if config is None:
             return False
         sources = config.get("sources")
-        return isinstance(sources, list) and len(sources) > 0
+        has_sources = isinstance(sources, list) and len(sources) > 0
+        tdx_dir = config.get("tdx_dir")
+        has_tdx = isinstance(tdx_dir, str) and tdx_dir.strip() != ""
+        return has_sources or has_tdx
 
     def _ensure_config(self) -> None:
         if self._config is not None:
@@ -242,6 +351,9 @@ class DataLoader:
             symbol = entry.get("symbol", "").strip()
             if symbol:
                 self._source_by_symbol[symbol] = entry
+        tdx_dir = self._config.get("tdx_dir")
+        if isinstance(tdx_dir, str) and tdx_dir.strip():
+            self._tdx_dir = str(Path(tdx_dir.strip()).expanduser())
 
     def fetch(
         self,
@@ -271,6 +383,12 @@ class DataLoader:
         for code in codes:
             clean = code.split(":", 1)[1] if code.startswith("local:") else code
             entry = self._source_by_symbol.get(clean)
+            # If no per-symbol entry exists but a global tdx_dir is configured
+            # and the symbol looks like an A-share code, synthesize a tdx entry
+            # on the fly so the fetch layer routes to _read_tdx_daily.
+            if entry is None and self._tdx_dir and _tdx_symbol_to_code(clean):
+                entry = {"type": "tdx", "tdx_dir": self._tdx_dir}
+                self._source_by_symbol[clean] = entry
             if entry is None:
                 logger.warning("local loader: no config entry for symbol %s", clean)
                 continue
@@ -299,6 +417,25 @@ class DataLoader:
             return None
 
         src_type: str = entry.get("type", "csv").strip().lower()
+        if src_type == "tdx":
+            tdx_dir = entry.get("tdx_dir") or self._tdx_dir
+            if not tdx_dir:
+                logger.warning(
+                    "local loader: tdx type requires tdx_dir for symbol %s", symbol
+                )
+                return None
+            expanded_dir = str(Path(tdx_dir).expanduser())
+            df = _read_tdx_bars(expanded_dir, symbol, interval)
+            if df is None:
+                return None
+            start = pd.Timestamp(start_date)
+            end = pd.Timestamp(end_date) + pd.Timedelta(days=1) - pd.Timedelta(seconds=1)
+            df = df[(df.index >= start) & (df.index <= end)]
+            if df.empty:
+                return None
+            df = _resample_to_interval(df, interval, symbol)
+            return df if not df.empty else None
+
         reader = _READERS.get(src_type)
         if reader is None:
             logger.warning("local loader: unsupported type %r for symbol %s", src_type, symbol)

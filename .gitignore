@@ -16,6 +16,8 @@ results/
 
 .env
 agent/.env
+agent/api_server.py
+vt.ps1
 
 .claude/*
 !.claude/hooks.json
