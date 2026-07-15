@@ -53,13 +53,18 @@ class MarketDataTool(BaseTool):
                     "alphavantage",
                     "tiingo",
                     "fmp",
+                    "local",
                 ],
                 "description": (
                     "Data source. 'auto' detects from symbol format with fallback. "
                     "Free, no key: yfinance/yahoo (US/HK equities), okx/ccxt "
                     "(crypto), baostock/tencent/eastmoney/sina/akshare/mootdx "
                     "(China A-shares), stooq (global EOD). Key-gated REST: tushare "
-                    "(China A-shares), finnhub/alphavantage/tiingo/fmp (US/global)."
+                    "(China A-shares), finnhub/alphavantage/tiingo/fmp (US/global). "
+                    "'local' reads user-configured offline data (通达信 vipdoc "
+                    ".day/.lc1/.lc5 binaries via ~/.vibe-trading/data-bridge/"
+                    "config.yaml → tdx_dir); use when network sources are blocked "
+                    "or for reproducible offline backtests on A-shares."
                 ),
                 "default": "auto",
             },
