@@ -136,7 +136,7 @@ def _host():
     function that reads these symbols goes through ``_host()`` so monkeypatched
     values take effect.
     """
-    return _sys.modules.get("api_server") or _sys.modules.get("agent.api_server")
+    return _sys.modules.get("api_server") or _sys.modules.get("agent.api_server") or _sys.modules.get(\"__main__\")
 
 
 # ---------------------------------------------------------------------------
@@ -324,7 +324,7 @@ def register_settings_routes(
     require_settings_write_auth: AuthDep | None = None,
 ) -> None:
     """Mount the settings routes onto ``app``."""
-    host = _sys.modules.get("api_server") or _sys.modules.get("agent.api_server")
+    host = _sys.modules.get("api_server") or _sys.modules.get("agent.api_server") or _sys.modules.get(\"__main__\")
 
     if host is None:
         raise RuntimeError(
