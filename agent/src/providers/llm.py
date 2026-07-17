@@ -285,10 +285,10 @@ else:
 
 AGENT_DIR = Path(__file__).resolve().parents[2]
 
-# .env search order: ~/.vibe-trading/.env → agent/.env → $CWD/.env
+# Explicitly prioritize the agent directory's .env file to avoid shadowing
 _ENV_CANDIDATES = [
-    Path.home() / ".vibe-trading" / ".env",
     AGENT_DIR / ".env",
+    Path.home() / ".vibe-trading" / ".env",
     Path.cwd() / ".env",
 ]
 
