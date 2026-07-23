@@ -55,6 +55,7 @@ class MarketDataTool(BaseTool):
                     "tiingo",
                     "fmp",
                     "local",
+                    "qmt",
                     "mt5",
                 ],
                 "description": (
@@ -69,6 +70,9 @@ class MarketDataTool(BaseTool):
                     ".day/.lc1/.lc5 binaries via ~/.vibe-trading/data-bridge/"
                     "config.yaml → tdx_dir); use when network sources are blocked "
                     "or for reproducible offline backtests on A-shares. "
+                    "'qmt' reads real-time/historical A-share data via the QMT "
+                    "terminal's xtquant API (requires QMT running and qmt_dir in "
+                    "config.yaml; best data quality for A-shares). "
                     "mt5: forex/metals from a local MetaTrader 5 terminal (Windows; "
                     "e.g. EUR/USD, XAUUSD.FX)."
                 ),
