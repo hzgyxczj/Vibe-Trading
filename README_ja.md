@@ -52,14 +52,24 @@
 
 > ⚠️ **セキュリティ警告：** Xアカウント `VibeTrading_HKU`、Virtualsプロジェクト `101845`、およびトークンコントラクト `0x640BDBF77b6447E8b7DB7894cED84BD1c40571f4` は、いずれもVibe-Trading公式のものではありません。Vibe-Tradingはこれまで、いかなるトークンやミームコインも発行・公認していません。購入、ウォレットの接続、署名は行わないでください。[詳細](SECURITY.md#official-channels--impersonation)
 
+- **2026-07-21** 🔧 **データローダーの完全性 + 信頼性修正の総点検**：部分的な市場データは、欠損したシンボルを fallback チェーンで補完し、補完できない場合はフェイルクローズするようになり、バックテストのユニバースを黙って縮小しなくなりました（[#689](https://github.com/HKUDS/Vibe-Trading/pull/689)、[#681](https://github.com/HKUDS/Vibe-Trading/issues/681) をクローズ、@xkam7ar さんに感謝）。また、OKX のバーは深い履歴バックフィルのためにレート制限リトライ付きで `history-candles` エンドポイントを使用します（[#644](https://github.com/HKUDS/Vibe-Trading/pull/644)、@tyj147454413-cmd さんに感謝）。さらに修正の総点検：MCP ネットワークガードが IPv6／大文字小文字違いのホストを受け入れ（[#750](https://github.com/HKUDS/Vibe-Trading/pull/750)、@Robin1987China さんに感謝）、取引ジャーナルのパーサーが空白/NaN のシンボル行をスキップし（[#749](https://github.com/HKUDS/Vibe-Trading/pull/749)、@Robin1987China さんに感謝）、Shadow Account が日足バーでは抽出された入場時間ゲートをスキップし（[#748](https://github.com/HKUDS/Vibe-Trading/pull/748)、@Robin1987China さんに感謝）、MiniMax のリージョン API エンドポイントが選択可能になりました（[#731](https://github.com/HKUDS/Vibe-Trading/pull/731)、@octo-patch さんに感謝）。
+
+- **2026-07-20** 🔀 **プロバイダー、MetaTrader 5、堅牢性の総点検**：ネイティブの **Anthropic Messages API**（任意の `[anthropic]` extra、[#695](https://github.com/HKUDS/Vibe-Trading/pull/695)、@jelech さんに感謝）、**SiliconFlow**（[#565](https://github.com/HKUDS/Vibe-Trading/pull/565)、@UNHNQ さんに感謝）、**iFlytek Spark**（[#537](https://github.com/HKUDS/Vibe-Trading/pull/537)、@FenjuFu さんに感謝）がプロバイダーに加わり、**MetaTrader 5（Exness）** ブローカーコネクタ + `mt5` 為替/貴金属データソースが追加されました（ブローカーコネクタ → **12**、[#481](https://github.com/HKUDS/Vibe-Trading/pull/481)、@StaniellG さんに感謝）。さらに、プロバイダー非依存の **`llm-vision` OCR** エンジン（[#548](https://github.com/HKUDS/Vibe-Trading/pull/548)、@shadowinlife さんに感謝）、**80× のシグナル整列ベクトル化**（[#698](https://github.com/HKUDS/Vibe-Trading/pull/698)、@shadowinlife さんに感謝）、Binance **USD-M ファンディング/ブラケット** の履歴データ（[#716](https://github.com/HKUDS/Vibe-Trading/pull/716)、@honginp さんに感謝）、swarm の MCP ディスカバリキャッシュ（[#704](https://github.com/HKUDS/Vibe-Trading/pull/704)）、そして **13** 件の SSE/セッション/CLI/swarm/スケジューラの問題をクローズする信頼性統合（[#584](https://github.com/HKUDS/Vibe-Trading/pull/584)、@xkam7ar さんに感謝）。正確性の修正：オプションの**部分決済** がロット全体を清算せず要求数量だけを決済するように（[#577](https://github.com/HKUDS/Vibe-Trading/issues/577)）、プロバイダー資格情報解決の一元化（[#563](https://github.com/HKUDS/Vibe-Trading/pull/563)）、キュー中のキャンセル処理（[#641](https://github.com/HKUDS/Vibe-Trading/pull/641)）、フロントエンドのストリーミング DOM 競合（[#717](https://github.com/HKUDS/Vibe-Trading/pull/717)、@Marnie0415 さんに感謝）、コネクタ CLI レンダラー（[#726](https://github.com/HKUDS/Vibe-Trading/pull/726)、@nareshkps さんに感謝）。
+
+- **2026-07-19** 🔧 **米国株/香港株の実ニュース記事 + MCP factor-analysis の修正 + 堅牢性の総点検**：株式ニュースツールは、米国株と香港株のティッカーに対して関連銘柄マッチではなく実際の **Yahoo Finance 記事**（title/url/source/published/snippet）を返すようになり、引き続き凍結された IP スロットリングクライアント経由でルーティングされます（[#730](https://github.com/HKUDS/Vibe-Trading/pull/730)、@yxhuang さんに感謝）。MCP の `factor_analysis` ツールは登録済みツールの実際の CSV コントラクトに揃えられ、実行前に `KeyError` で失敗しなくなりました（[#715](https://github.com/HKUDS/Vibe-Trading/pull/715)、[#635](https://github.com/HKUDS/Vibe-Trading/issues/635) をクローズ、@Robin1987China さんに感謝）。さらに堅牢性の総点検：**Kimi K シリーズ**全体（k2/k3/…/`for-coding`）が API の要求どおり `temperature=1` を自動で強制するようになり（[#701](https://github.com/HKUDS/Vibe-Trading/pull/701)、@sambazhu さんに感謝）、`split_message`・PDF ページ範囲・トレードジャーナルの日付フィルタは、退化した入力や逆転した入力に対してハングや暗黙の空結果を返す代わりに即座に失敗するようになりました（[#727](https://github.com/HKUDS/Vibe-Trading/pull/727)–[#729](https://github.com/HKUDS/Vibe-Trading/pull/729)、@santhreal さんに感謝）。
+
+<details>
+<summary>過去のニュース</summary>
+
+- **2026-07-18** 🔧 **Binance 暗号資産フォールバック + 並列実行と正確性の修正**：**Binance** loader が暗号資産のヒストリカルデータ fallback チェーンに加わりました（[#643](https://github.com/HKUDS/Vibe-Trading/pull/643)、@tyj147454413-cmd さんに感謝）。また IBKR コネクタはスレッドローカルな接続プールとスナップショット気配に移行し、並列 agent 実行時のハングを修正しました（[#636](https://github.com/HKUDS/Vibe-Trading/pull/636)、@MikeCer さんに感謝）。さらに正確性の総点検：factor analysis は非正の `n_groups` を拒否し、逆転した期間レンジと非正の検出ウィンドウは即座に失敗し、correlation matrix 内の名前なし `DatetimeIndex` を正しく処理し、`equity.csv` の nav/value 列エイリアスを受け付け、空の A 株コードはもう `000000.SZ` に強制変換されません（[#709](https://github.com/HKUDS/Vibe-Trading/pull/709)–[#714](https://github.com/HKUDS/Vibe-Trading/pull/714)、@santhreal さんに感謝）。correlation-rewiring 安定性ファクターが academic zoo に加わり（[#705](https://github.com/HKUDS/Vibe-Trading/pull/705)、@ebujinovch さんに感謝）、fundamental zoo が factor analysis のホワイトリストに追加され（[#707](https://github.com/HKUDS/Vibe-Trading/pull/707)、@sambazhu さんに感謝）、永続化された実行状態が fsync で確実になり（[#645](https://github.com/HKUDS/Vibe-Trading/pull/645)、@tyj147454413-cmd さんに感謝）、dev extra がドキュメント記載の Black/Ruff ツールチェーンをインストールするようになりました（[#634](https://github.com/HKUDS/Vibe-Trading/pull/634)、@xkam7ar さんに感謝）。
+
+- **2026-07-17** 🧩 **correlation-regime skill + バックテスト / データ / ライブ安全性にわたる広範な正確性の総点検**：新しい **correlation-regime** 検出 skill（同梱 skills → 88、[#557](https://github.com/HKUDS/Vibe-Trading/pull/557)、@ebujinovch さんに感謝）、Longbridge のランタイム接続カード（[#569](https://github.com/HKUDS/Vibe-Trading/pull/569)、@fanfpy さんに感謝）、そして `~/.vibe-trading` から読み込むユーザー定義の swarm presets（[#570](https://github.com/HKUDS/Vibe-Trading/pull/570)、@darkknight4563 さんに感謝）。さらにスタック全体にわたる強化：Futu / Tencent / CCXT / mootdx の各 loader におけるサイレントなデータ破損の修正、factor bench と Shadow Account でのルックアヘッドバイアスと strict-OOS のガード、ライブ取引の安全性（符号付きエクスポージャー上限、アトミックな日次注文制限、同意優先の mandate コミット、fail-closed なライブ状態）、および journal / QVeris 予算 / swarm / CI ゲートの改善（[#552](https://github.com/HKUDS/Vibe-Trading/pull/552)、@xor-xe さんに感謝；正確性に関する作業の多くは @xkam7ar によるものです）。
+
 - **2026-07-16** 🔧 **依存関係ロックの修復 + Windows 設定保存の修正**：ハッシュ検証付きランタイムロックを再生成し、Docker の `pip install --require-hashes` が再び正常に解決されるようにして、`caio`/`pydantic-core`/`websockets` の非互換ピンを修正しました（[#564](https://github.com/HKUDS/Vibe-Trading/pull/564)、[#558](https://github.com/HKUDS/Vibe-Trading/issues/558) をクローズ、@tianrking さんに感謝）。Web UI からの Agent LLM 設定の保存が Windows で HTTP 500 を返さなくなりました——POSIX 限定の `os.fchmod` 強化はプラットフォームで分岐し、`fchmod` のない環境向けの回帰テストを追加しています（[#561](https://github.com/HKUDS/Vibe-Trading/pull/561)、@CRui5in さんに感謝）。
 
 - **2026-07-15** 🧮 **バックテストの正確性 + Portfolio Studio コア完成**：10 件の PR をまとめた今回の更新で、リバランスの因果性と順序非依存性、終端決済コスト、約定ベースの回転率、エクスポージャー上限、有限かつ厳格な検証出力を揃えました（[#530](https://github.com/HKUDS/Vibe-Trading/pull/530)/[#531](https://github.com/HKUDS/Vibe-Trading/pull/531)/[#532](https://github.com/HKUDS/Vibe-Trading/pull/532)/[#540](https://github.com/HKUDS/Vibe-Trading/pull/540)）。履歴チャートは実行時のデータソースを再利用し、反復可能な市場クエリは黙って除外されず、`.env` 読み込み後に設定キャッシュを更新します（[#535](https://github.com/HKUDS/Vibe-Trading/pull/535)/[#544](https://github.com/HKUDS/Vibe-Trading/pull/544)/[#554](https://github.com/HKUDS/Vibe-Trading/pull/554)）。Portfolio Studio [#456](https://github.com/HKUDS/Vibe-Trading/issues/456) と設定バグ [#541](https://github.com/HKUDS/Vibe-Trading/issues/541) をクローズし、provider 修正 [#528](https://github.com/HKUDS/Vibe-Trading/issues/528)/[#529](https://github.com/HKUDS/Vibe-Trading/issues/529) も完了しました。@YZY0108、@santhreal、@Robin1987China、@xkam7ar、@Marnie0415、@marichu99 に感謝します。
 
 - **2026-07-14** 🌉 **Longbridge 市場データ + モダン MCP transport + provider reliability**：Longbridge が、キーで有効化される認証情報、日付ウィンドウ分割、厳格な完全性チェック、オプトイン SDK 依存関係とともに履歴データ fallback 層へ加わりました。中国市場の資金フロー系 4 ツールには検証済み Tushare fallback が追加され、最終純資産が負でもバックテスト指標がクラッシュしません。MCP server は Streamable HTTP に対応し、`write_file` は別名または欠落した path 引数を安全に復元、hypothesis 更新は未対応フィールドを拒否し、Correlation リクエストには認証が付きました。NVIDIA NIM は Web Settings と 2 つの CLI onboarding で first-class provider となり、報告された 403 に対処するバージョン付き互換 User-Agent を送信します。Web Settings は canonical な `~/.vibe-trading/.env` へ書き込み、legacy 設定を移行して権限エラーを明示することで、DeepSeek の保存時 500 を修正しました（[#534](https://github.com/HKUDS/Vibe-Trading/pull/534)、[#516](https://github.com/HKUDS/Vibe-Trading/issues/516)/[#524](https://github.com/HKUDS/Vibe-Trading/issues/524) をクローズ；[#528](https://github.com/HKUDS/Vibe-Trading/issues/528)/[#529](https://github.com/HKUDS/Vibe-Trading/issues/529)）。コード、報告、診断を寄せてくださった @fanfpy、@asahikiko、@santhreal、@sTunnaSu、@abhishekjaisinghani、@huangcheng、@ShiroKSH、@Meru143、@DIEGOD79、@not-knope に感謝します。
-
-<details>
-<summary>過去のニュース</summary>
 
 - **2026-07-13** 🔒 **セキュリティ強化：外部監査の 10 件をすべてクローズ + contributor batch**：2026-07-10 の外部セキュリティ監査（issue [#476](https://github.com/HKUDS/Vibe-Trading/issues/476)、discussion [#468](https://github.com/HKUDS/Vibe-Trading/discussions/468)）の全 10 件が `main` で対応済みになりました——digest 固定ベースイメージによる Docker マルチステージ再構築、ネットワーク/subprocess/eval/os.environ/安全でない open を（ネストした関数本体の内部も含めて）遮断する AST 硬化バックテストサンドボックス、短命・使い切りの SSE 認証チケット、強化された Compose（read-only rootfs、capabilities 削減、リソース制限）、`/correlation` の認証 + レート制限、セキュリティヘッダー、ハッシュ固定された依存関係、ほか多数。あわせて合流：Alpaca キー分離のオプトイン **TAP モード**（[#377](https://github.com/HKUDS/Vibe-Trading/pull/377)、@0xZKnw さんに感謝）、バックテスト指標への実現ポートフォリオ回転率の反映（[#478](https://github.com/HKUDS/Vibe-Trading/pull/478)、@Robin1987China さんに感謝）、**Frazzini-Pedersen の低ベータプレミアム**アカデミックファクター（Alpha Zoo → 461、[#480](https://github.com/HKUDS/Vibe-Trading/pull/480)、@YogeshModi24 さんに感謝）、5 つのポートフォリオオプティマイザ全体でのルックアヘッドバイアス修正（[#487](https://github.com/HKUDS/Vibe-Trading/pull/487)、@YZY0108 さんに感謝）、そして 2 件の preflight/provider 設定修正（[#479](https://github.com/HKUDS/Vibe-Trading/pull/479)/[#484](https://github.com/HKUDS/Vibe-Trading/pull/484)、[#477](https://github.com/HKUDS/Vibe-Trading/issues/477)/[#482](https://github.com/HKUDS/Vibe-Trading/issues/482) をクローズ、@ananaymital/@Bortlesboat さんに感謝）。
 
@@ -306,7 +316,7 @@ vibe-trading run -p "Analyze my trading behavior, extract my shadow strategy, an
 
 ## 📡 データソースとスマートフォールバック
 
-1 回の `get_market_data` 呼び出しで **19 の無料マーケットデータソース**（およびオプションの有料マーケットプレイス **QVeris**）にアクセスできます。`source: "auto"` を指定すれば、loader が銘柄に応じてソースを選び、**IP 規制リスク**の順に並んだ市場別チェーンをたどります。規制を受けない公開ソースを先に、スロットリングや key を要するソースを最後に試します。設定不要、単一障害点なし。
+1 回の `get_market_data` 呼び出しで **20 の無料マーケットデータソース**（およびオプションの有料マーケットプレイス **QVeris**）にアクセスできます。`source: "auto"` を指定すれば、loader が銘柄に応じてソースを選び、**IP 規制リスク**の順に並んだ市場別チェーンをたどります。規制を受けない公開ソースを先に、スロットリングや key を要するソースを最後に試します。設定不要、単一障害点なし。
 
 | Source | Markets | Auth | Role |
 |--------|---------|------|------|
@@ -320,6 +330,7 @@ vibe-trading run -p "Analyze my trading behavior, extract my shadow strategy, an
 | `qveris` | グローバル・マルチアセット | key · credits | **プレミアムマーケットプレイス** — 1つの key で 63+ providers（明示指定のみ、auto フォールバック対象外） |
 | `okx` · `ccxt` | crypto | none | OKX + 100+ exchanges |
 | `futu` | HK / A | OpenD | optional local FutuOpenD |
+| `mt5` | 為替 / 貴金属 | MT5 terminal | オプションのローカル MetaTrader 5 terminal（Windows）— ブローカーそのままのフィード、Exness 形式のシンボル接尾辞は自動解決 |
 | `india_broker` | インド（NSE/BSE） | ブローカーログイン | `.NS` / `.BO` 向けの読み取り専用 Shoonya / Dhan bars（フォールバックチェーン末尾） |
 | `local` | any | none | your own CSV / Parquet / DuckDB via `local:` prefix |
 
@@ -329,7 +340,8 @@ vibe-trading run -p "Analyze my trading behavior, extract my shadow strategy, an
 - **米国株** → `yahoo` · `stooq` · `sina` · `eastmoney` · `yfinance` · `tiingo` · `fmp` · `finnhub` · `alphavantage` · `akshare` · `local`
 - **香港株** → `eastmoney` · `yahoo` · `futu` · `yfinance` · `akshare` · `local`
 - **インド株（NSE/BSE）** → `yahoo` · `yfinance` · `india_broker` · `local`
-- **暗号資産** → `okx` · `ccxt` · `yfinance` · `local` &nbsp;·&nbsp; *(先物 / ファンド / マクロ / FX → `tushare`/`akshare` → `local`)*
+- **暗号資産** → `okx` · `ccxt` · `yfinance` · `local` &nbsp;·&nbsp; *(先物 / ファンド / マクロ → `tushare`/`akshare` → `local`)*
+- **為替/貴金属** → `mt5` · `akshare` · `yfinance` · `local`
 
 OHLCV にとどまらず、**18 の読み取り専用データツール**がファンダメンタルズと資金フローまで踏み込みます。資金フロー、龍虎榜、北向資金、信用取引、大口取引、株主数、ロックアップ、セクター、調査レポート、ニュース、SEC filings、財務諸表、オプションチェーン、機関投資家保有、市場スクリーニング、銘柄検索、マクロまで、すべて MCP 経由で公開されます。明示的な `local:` 銘柄が暗黙のうちにネットワークソースへフォールバックすることは決してありません。
 
@@ -338,7 +350,7 @@ OHLCV にとどまらず、**18 の読み取り専用データツール**がフ�
 
 <img src="https://www.qveris.com/logo-color.png" alt="QVeris" height="36">
 
-**データは無料ルーティングが標準、必要なときだけプレミアム。** 既定では 19 の内蔵ソースが自動フォールバックし、key も費用も不要です。QVeris を使うと、63+ providers と 10,000+ capabilities（per QVeris）で、オプション Greeks、高度なファンダメンタルズ、中国・香港・グローバルデータ、マクロ、暗号資産、ニュース、filings を補えます。失敗した call は課金されません。Settings → QVeris または `vibe-trading data mode paid` で有効化できます。
+**データは無料ルーティングが標準、必要なときだけプレミアム。** 既定では 20 の内蔵ソースが自動フォールバックし、key も費用も不要です。QVeris を使うと、63+ providers と 10,000+ capabilities（per QVeris）で、オプション Greeks、高度なファンダメンタルズ、中国・香港・グローバルデータ、マクロ、暗号資産、ニュース、filings を補えます。失敗した call は課金されません。Settings → QVeris または `vibe-trading data mode paid` で有効化できます。
 
 *QVeris disclosure: [Vibe-Trading の紹介リンク](https://qveris.ai/?ref=Vyjjo5G_1cAHJA) から登録すると **+1,000 クレジット** が追加付与され、プロジェクトの支援にもなります。*
 <!-- QVERIS-END -->
@@ -864,7 +876,7 @@ Interactive docs: `http://localhost:8899/docs`
 
 localhost 開発では、`vibe-trading serve` は browser workflow を簡単に保ちます。非ローカル client では、sensitive API endpoints に `API_AUTH_KEY` が必要です。JSON/upload requests には `Authorization: Bearer <key>` を使ってください。Browser EventSource streams は、Settings で同じ key を一度入力した後、Web UI が処理します。
 
-Shell-capable tools は local CLI と trusted localhost workflows で利用できますが、`VIBE_TRADING_ENABLE_SHELL_TOOLS=1` を明示的に設定しない限り remote API sessions には公開されません。Document と journal readers は既定で upload/import roots に制限されます。ファイルは `agent/uploads`、`agent/runs`、`./uploads`、`./data`、`~/.vibe-trading/uploads`、`~/.vibe-trading/imports` の下に置くか、`VIBE_TRADING_ALLOWED_FILE_ROOTS` で専用 directory を追加してください。
+Shell-capable tools（`bash` / `background_run`）はインタラクティブな local CLI でのみ有効です。それ以外のすべての面 — HTTP/SSE API と MCP server の**すべての** transport（stdio を含む）— は、`VIBE_TRADING_ENABLE_SHELL_TOOLS=1` を明示的に設定する（または `vibe-trading-mcp` に `--enable-shell-tools` を渡す）まで無効のままです。transport の種類が暗黙に shell アクセスを許可することはありません。Document と journal readers は既定で upload/import roots に制限されます。ファイルは `agent/uploads`、`agent/runs`、`./uploads`、`./data`、`~/.vibe-trading/uploads`、`~/.vibe-trading/imports` の下に置くか、`VIBE_TRADING_ALLOWED_FILE_ROOTS` で専用 directory を追加してください。
 
 ### Web UI Settings
 
@@ -989,6 +1001,48 @@ OpenSpace と使うには、agent config に両方の MCP servers を追加し�
 OpenSpace は 87 skills を自動検出し、auto-fix、auto-improve、community sharing を可能にします。OpenSpace-connected agent では `search_skills("finance backtest")` から Vibe-Trading skills を検索できます。
 
 </details>
+
+### MetaTrader 5（Exness などの MT5 ブローカー）
+
+公式の `MetaTrader5` パッケージ経由で、**ローカルで稼働中の MT5 terminal** に接続します（**Windows 専用**）:
+
+```bash
+pip install "vibe-trading-ai[mt5]"
+```
+
+`~/.vibe-trading/mt5.json` を設定します（手動で作成し、対応環境では chmod 600 を設定）:
+
+```json
+{
+  "login": 12345678,
+  "password": "...",
+  "server": "Exness-MT5Trial8",
+  "symbol_suffix": "m",
+  "max_order_volume": 1.0,
+  "max_order_notional_usd": 10000
+}
+```
+
+続いて:
+
+```bash
+vibe-trading connector use mt5-paper-sdk
+vibe-trading connector check
+vibe-trading connector account
+vibe-trading connector quote EURUSD
+vibe-trading connector history EURUSD
+```
+
+| Profile | 口座 | 注文 |
+|---------|------|------|
+| `mt5-paper-sdk` | デモ | 読み取り専用 |
+| `mt5-live-sdk-readonly` | リアル | 読み取り専用 |
+| `mt5-paper-trade` | デモ | 直接発注（connector のサイズガードが適用されます） |
+| `mt5-live-trade` | リアル | mandate + kill-switch によるゲート |
+
+安全境界: **「paper」はブローカーのデモ口座**を指し、毎回の呼び出しで検証されます — terminal が `account_info().trade_mode` と login を返すため、リアルマネー口座に接続された paper profile（またはその逆）は強制的に拒否されます。MT5 の注文サイズは**ロット**単位です（1 lot EURUSD = 100,000 EUR）。live の mandate ゲートは connector の USD サイジングフックを通じてロットを USD 換算し、connector 自身の `max_order_volume` / `max_order_notional_usd` ガードはデモと live の**両方**に適用されます。ヘッジ口座（Exness の既定）での注意: 反対サイドの注文は**ヘッジを新規に建てます** — ポジションは ticket 指定でクローズしてください（position ticket を指定した `trading_cancel_order`、または `close_position`）。これにより deal がそのポジションに固定され、エクスポージャーの削減のみが行われます。ロールバック / 停止経路: kill switch は新規の live 注文をブロックし、キャンセルは引き続き利用可能で監査ログに記録されます。Mandate の上限は USD 建てです。USD 以外の口座通貨の場合は、ブローカー側で口座通貨建ての証拠金として強制されます。
+
+`mt5` マーケットデータ loader（為替フォールバックチェーンの先頭）は同じ `mt5.json` を共有します — ファイルがない場合は、最後に使用されたログイン済み terminal に読み取り専用で接続します。
 
 ---
 
@@ -1129,7 +1183,39 @@ Contributions を歓迎します。ガイドラインは [CONTRIBUTING.md](CONTR
 
 Vibe-Trading に貢献してくださった皆さまに感謝します。
 
-最近の v0.1.11 サイクルの貢献者とクレジット：
+最近の v0.1.12 サイクルの貢献者とクレジット：
+
+- @santhreal — a 30-PR correctness sweep: strict-JSON / finite-number hardening across metrics, factors, pattern, and options (#764/#765/#766/#767/#739/#740/#744), loader correctness (#761 yahoo 1m bars), and session / journal robustness (#762/#763/#768/#769/#770)
+- @xkam7ar — broad reliability across packaging, web, scheduler, swarm, and CLI (#584), cancellation before the first AgentLoop iteration (#641, closes #638), QVeris session budget + atomic credit accounting (#685/#686), CI / OOS gates (#630/#632), and journal month-filter / side-parse fixes (#626/#628)
+- @shadowinlife — the Strategy Development Manager skill (#457, closes #455), pluggable OCR + LLM-vision extraction (#548), centralized provider credentials (#563), the 80× signal-alignment vectorization (#698), and swarm MCP-discovery caching (#704)
+- @ebujinovch — the correlation regime timeline endpoint + UI (#756, closes #719) and its `correlation-regime` skill (#557), plus the `academic_corr_rewire` factor (#705)
+- @honginp — Binance USD-M routing with execution/mark separation (#470/#716) and the maintenance-bracket decouple that keeps `-PERP` backtests zero-credential (#757)
+- @StaniellG — the MetaTrader 5 (Exness) broker connector + `mt5` data source (#481)
+- @tyj147454413-cmd — the Binance fallback loader (#643), bounded OKX history with rate-limit handling (#644), and codex stream-failure classification (#663)
+- @Marnie0415 — composite sub-engine fallback for unknown symbols (#734) and the frontend `insertBefore` streaming DOM-race fix (#717)
+- @YZY0108 — the look-ahead-bias fix across all five portfolio optimizers (#487)
+- @UNHNQ — the SiliconFlow CN + Global providers (#565)
+- @FenjuFu — the iFlytek Spark provider (#537)
+- @jelech — the native Anthropic Messages API adapter (#695)
+- @octo-patch — MiniMax regional API endpoints (#731)
+- @Thibaultjaigu — the Requesty OpenAI-compatible gateway provider (#474)
+- @Robin1987China — realized portfolio turnover metrics for every optimizer (#478)
+- @YogeshModi24 — the Frazzini-Pedersen betting-against-beta academic factor (#480)
+- @0xZKnw — opt-in TAP mode for Alpaca (#377)
+- @sambazhu — the fundamental zoo `_VALID_ZOOS` whitelist (#707)
+- @nareshkps — Robinhood connector `account_number` wiring (#726)
+- @darkknight4563 — user swarm-presets directory discovery (#570)
+- @MikeCer — IBKR thread-local connection pool + snapshot quotes (#636)
+- @Shizoqua — `local` loader interval resampling (#467)
+- @roberttidball — FastMCP transport import compatibility (#469)
+- @yxhuang — bare-ticker resolution in the correlation matrix (#472, closes #471)
+- @Bortlesboat — stale `OPENAI_BASE_URL` provider-switch fix (#484, closes #482)
+- @ananaymital — preflight `EnvConfig` stale-cache fix (#479, closes #477)
+- @GabbaTauchi — reported the native zai streaming / base-URL bug (#758)
+- @warren618 / Haozhe Wu — the correlation regime backend integration, the zai provider streaming + base-URL resolution fix (#758), release integration, and open-PR/issue triage
+
+<details>
+<summary>v0.1.11 サイクルの貢献者</summary>
 
 - @shadowinlife — the `api_server` modularization capstone (1,103 → 371 lines, #424 closing #331), centralized env config with the AST CI gate (#440), loader `fetch()` protocol conformance (#437), and the Strategy Development Manager RFC in review (#455/#457) — 12 merged PRs this cycle
 - @Robin1987China — Research Autopilot Phase 3 loop closure (#267), 4 canonical academic alphas (#277), Shadow Account PIT-safe entry conditions (#302/#314/#316), the turnover-aware portfolio optimizer (#466), scheduled-research route tests (#452), and test-coverage batches for trade-journal / pattern / loader layers (#268/#269/#276)
@@ -1162,6 +1248,8 @@ Vibe-Trading に貢献してくださった皆さまに感謝します。
 - @flash1234pku — the tushare reference code-fence fix (#449)
 - @Penn-Live — the Docker startup route-iteration crash report (#450)
 - @warren618 / Haozhe Wu — the fundamental factor layer (PIT-safe SEC panels), the QVeris premium track, the IM channel runtime, India-equity integration review, CN search fallbacks, and release integration
+
+</details>
 
 <details>
 <summary>v0.1.10 サイクルの貢献者</summary>

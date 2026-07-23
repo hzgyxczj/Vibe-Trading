@@ -55,6 +55,7 @@ class MarketDataTool(BaseTool):
                     "tiingo",
                     "fmp",
                     "local",
+                    "mt5",
                 ],
                 "description": (
                     "Data source. 'auto' detects from symbol format with fallback. "
@@ -67,7 +68,9 @@ class MarketDataTool(BaseTool):
                     "'local' reads user-configured offline data (通达信 vipdoc "
                     ".day/.lc1/.lc5 binaries via ~/.vibe-trading/data-bridge/"
                     "config.yaml → tdx_dir); use when network sources are blocked "
-                    "or for reproducible offline backtests on A-shares."
+                    "or for reproducible offline backtests on A-shares. "
+                    "mt5: forex/metals from a local MetaTrader 5 terminal (Windows; "
+                    "e.g. EUR/USD, XAUUSD.FX)."
                 ),
                 "default": "auto",
             },
