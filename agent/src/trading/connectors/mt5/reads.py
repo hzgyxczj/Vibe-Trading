@@ -29,10 +29,15 @@ _MT5_ERRORS = (MT5DependencyError, MT5ConfigError, MT5ConnectionError, MT5Profil
 #: Canonical period token → MetaTrader5 timeframe constant name. Resolved via
 #: ``getattr`` on the module so fakes only need the integers. NOTE ``1m``
 #: (minute) and ``1M`` (month) differ by case, matching the other connectors.
+#: ``1H``/``4H``/``1D``/``1W`` alias the lowercase forms (project-style tokens).
 _TIMEFRAME_MAP = {
     "1m": "TIMEFRAME_M1", "5m": "TIMEFRAME_M5", "15m": "TIMEFRAME_M15",
-    "30m": "TIMEFRAME_M30", "1h": "TIMEFRAME_H1", "4h": "TIMEFRAME_H4",
-    "1d": "TIMEFRAME_D1", "1w": "TIMEFRAME_W1", "1M": "TIMEFRAME_MN1",
+    "30m": "TIMEFRAME_M30",
+    "1h": "TIMEFRAME_H1", "1H": "TIMEFRAME_H1",
+    "4h": "TIMEFRAME_H4", "4H": "TIMEFRAME_H4",
+    "1d": "TIMEFRAME_D1", "1D": "TIMEFRAME_D1",
+    "1w": "TIMEFRAME_W1", "1W": "TIMEFRAME_W1",
+    "1M": "TIMEFRAME_MN1",
 }
 
 
@@ -259,6 +264,20 @@ def get_historical_bars(
     )
 
 
+def _int_or_none(value: Any) -> int | None:
+    """Cast *value* to a plain Python int (handles numpy scalars). Return None for None."""
+    if value is None:
+        return None
+    return int(value)
+
+
+def _float_or_none(value: Any) -> float | None:
+    """Cast *value* to a plain Python float (handles numpy scalars). Return None for None."""
+    if value is None:
+        return None
+    return float(value)
+
+
 def _rate_to_dict(rate: Any) -> dict[str, Any]:
     """Map one rates row (numpy structured row, mapping, or object) defensively."""
 
@@ -270,12 +289,12 @@ def _rate_to_dict(rate: Any) -> dict[str, Any]:
 
     volume = _get("tick_volume")
     return {
-        "time": _get("time"),
-        "open": _get("open"),
-        "high": _get("high"),
-        "low": _get("low"),
-        "close": _get("close"),
-        "volume": volume,
-        "spread": _get("spread"),
-        "real_volume": _get("real_volume"),
+        "time": _int_or_none(_get("time")),
+        "open": _float_or_none(_get("open")),
+        "high": _float_or_none(_get("high")),
+        "low": _float_or_none(_get("low")),
+        "close": _float_or_none(_get("close")),
+        "volume": _int_or_none(volume),
+        "spread": _int_or_none(_get("spread")),
+        "real_volume": _int_or_none(_get("real_volume")),
     }

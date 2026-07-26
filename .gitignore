@@ -83,6 +83,7 @@ agent/tests/test_e2e_*.py
 
 # Local working notes
 NOTES.md
+.workbuddy/
 
 # Agent tool aliases (auto-generated mirror of CLAUDE.md)
 AGENTS.md
@@ -92,3 +93,4 @@ AGENTS.md
 # Alpha Zoo wiki artifacts (generated, not source)
 wiki/alpha-library/manifest.json
 wiki/alpha-library/content/
+bench_report.json
