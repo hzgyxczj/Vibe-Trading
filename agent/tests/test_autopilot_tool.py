@@ -25,7 +25,7 @@ def _seed_hypothesis(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, *, univers
         thesis="A momentum signal should outperform over the test window.",
         universe=universe,
         signal_definition="Rank by trailing returns and buy the leaders.",
-        data_sources=["local"],
+        data_sources=["qmt"],
     )
 
 
@@ -52,7 +52,7 @@ def test_generate_backtest_config_writes_safe_config(
 
     assert payload["status"] == "ok"
     assert payload["config"]["codes"] == ["399006.SZ"]
-    assert payload["config"]["source"] == "local"
+    assert payload["config"]["source"] == "qmt"
     run_dir = Path(payload["run_dir"])
     assert run_dir.parent == tmp_path / ".vibe-trading" / "runs"
     assert run_dir.name.startswith("autopilot_")

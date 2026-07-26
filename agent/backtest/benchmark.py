@@ -55,8 +55,7 @@ def resolve_benchmark(
         explicit:       Override ticker (e.g. "SPY" passed via config).
         loader:         Loader of the configured data source. When given, the
                         benchmark is fetched through it first, falling back to
-                        yfinance if it yields no data — except ``local``,
-                        which fails closed to keep offline runs offline.
+                        yfinance if it yields no data.
 
     Returns:
         BenchmarkResult with return series and total return, or None if no
@@ -66,18 +65,11 @@ def resolve_benchmark(
     if ticker is None:
         return None
 
-    offline = source == "local"
-    if offline and getattr(loader, "name", None) != source:
-        # The runtime fallback chain in fetch_data_map() may have swapped in a
-        # network loader while config["source"] still says local — never fetch
-        # the benchmark through it. Fail closed instead.
-        loader = None
-
     try:
         bench_df = _fetch_benchmark(
             ticker, start_date, end_date, interval,
             loader=loader,
-            allow_fallback=not offline,
+            allow_fallback=True,
         )
     except Exception:
         return None
@@ -157,8 +149,8 @@ def _fetch_benchmark(
 
     Tries the configured source's loader first (when given). Falls back to
     yfinance (single symbol, no auth) when no loader is given or it yields
-    no data — unless ``allow_fallback`` is False (offline sources fail
-    closed instead of making a network request).
+    no data — unless ``allow_fallback`` is False (fail closed instead of
+    making a network request).
     """
     if loader is not None:
         try:

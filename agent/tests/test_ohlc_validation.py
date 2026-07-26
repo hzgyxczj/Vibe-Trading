@@ -3,12 +3,10 @@
 from __future__ import annotations
 
 import logging
-from pathlib import Path
 
 import pandas as pd
 import pytest
 
-import backtest.loaders.local_loader as local_loader
 from backtest.loaders.base import validate_ohlc
 
 
@@ -62,55 +60,6 @@ def test_validate_ohlc_passthrough_when_no_ohlc_columns() -> None:
     assert validate_ohlc(empty).empty
     other = pd.DataFrame({"value": [1, 2, 3]})
     assert validate_ohlc(other).equals(other)
-
-
-def test_local_loader_drops_dirty_bar(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    """A structurally invalid bar in a local file must not reach the backtest."""
-    csv_path = tmp_path / "dirty.csv"
-    csv_path.write_text(
-        "\n".join(
-            [
-                "Date,Open,High,Low,Close,Volume",
-                "2026-01-01,10,11,9,10.5,1000",
-                "2026-01-02,10,8,9,10.5,1500",  # high < low -> dirty
-                "2026-01-03,12,13,11,12.5,1200",
-            ]
-        ),
-        encoding="utf-8",
-    )
-    config_path = tmp_path / "config.yaml"
-    import yaml
-
-    config_path.write_text(
-        yaml.safe_dump(
-            {
-                "sources": [
-                    {
-                        "symbol": "AAA.US",
-                        "type": "csv",
-                        "path": str(csv_path),
-                        "columns": {
-                            "date": "Date",
-                            "open": "Open",
-                            "high": "High",
-                            "low": "Low",
-                            "close": "Close",
-                            "volume": "Volume",
-                        },
-                    }
-                ]
-            }
-        ),
-        encoding="utf-8",
-    )
-    monkeypatch.setattr(local_loader, "_CONFIG_PATH", config_path)
-
-    frames = local_loader.DataLoader().fetch(["AAA.US"], "2026-01-01", "2026-01-03")
-
-    df = frames["AAA.US"]
-    assert list(df["close"]) == [10.5, 12.5]  # the dirty 2026-01-02 bar is gone
 
 
 def test_sanitize_data_map_guards_every_source() -> None:

@@ -548,9 +548,9 @@ class BaseEngine(ABC):
                 end_date=config.get("end_date", ""),
                 interval=interval,
                 explicit=bench_ticker,
-                # Explicit source: fetch the benchmark through its own loader
-                # (keeps e.g. source=local offline). Auto keeps the yfinance
-                # default — its loader only wraps the preloaded strategy data.
+                # Explicit source: fetch the benchmark through its own loader.
+                # Auto keeps the yfinance default — its loader only wraps the
+                # preloaded strategy data.
                 loader=loader if bench_source != "auto" else None,
             )
             if bench_result is not None:

@@ -75,21 +75,6 @@ class _FakeCryptoLoader:
         return {}
 
 
-class _FakeLocalLoader:
-    """Mimics the real local loader: broad ``markets``, unavailable when the
-    user has no Data Bridge config."""
-
-    name = "local"
-    markets = {"a_share", "us_equity", "crypto"}
-    requires_auth = False
-
-    def is_available(self) -> bool:
-        return False
-
-    def fetch(self, codes, start_date, end_date, *, interval="1D", fields=None):
-        return {}
-
-
 # ---------------------------------------------------------------------------
 # @register decorator
 # ---------------------------------------------------------------------------
@@ -149,14 +134,14 @@ class TestFallbackChains:
         """Equity chains lead with throttle-tolerant public sources and trail
         with key-gated REST fallbacks, in the exact reviewed order."""
         assert FALLBACK_CHAINS["a_share"] == [
-            "tencent", "mootdx", "eastmoney", "baostock", "akshare", "tushare", "local",
+            "qmt", "tencent", "mootdx", "eastmoney", "baostock", "akshare", "tushare",
         ]
         assert FALLBACK_CHAINS["us_equity"] == [
             "yahoo", "stooq", "sina", "eastmoney", "yfinance", "tiingo", "fmp",
-            "finnhub", "alphavantage", "longbridge", "akshare", "local",
+            "finnhub", "alphavantage", "longbridge", "akshare",
         ]
         assert FALLBACK_CHAINS["hk_equity"] == [
-            "eastmoney", "yahoo", "futu", "yfinance", "akshare", "longbridge", "local",
+            "eastmoney", "yahoo", "futu", "yfinance", "akshare", "longbridge",
         ]
 
     def test_us_equity_includes_sina_fallback(self) -> None:
@@ -173,13 +158,13 @@ class TestFallbackChains:
 
     def test_unchanged_chains_preserved(self) -> None:
         """crypto/futures/fund/macro/forex chains must be left untouched."""
-        assert FALLBACK_CHAINS["crypto"] == ["okx", "binance", "ccxt", "yfinance", "local"]
-        assert FALLBACK_CHAINS["futures"] == ["tushare", "akshare", "local"]
-        assert FALLBACK_CHAINS["fund"] == ["tushare", "akshare", "local"]
-        assert FALLBACK_CHAINS["macro"] == ["akshare", "tushare", "local"]
+        assert FALLBACK_CHAINS["crypto"] == ["okx", "binance", "ccxt", "yfinance"]
+        assert FALLBACK_CHAINS["futures"] == ["tushare", "akshare"]
+        assert FALLBACK_CHAINS["fund"] == ["tushare", "akshare"]
+        assert FALLBACK_CHAINS["macro"] == ["akshare", "tushare"]
         # mt5 heads the forex chain (terminal feed when attached), degrading to
         # the previous chain unchanged.
-        assert FALLBACK_CHAINS["forex"] == ["mt5", "akshare", "yfinance", "local"]
+        assert FALLBACK_CHAINS["forex"] == ["mt5", "akshare", "yfinance"]
 
 
 # ---------------------------------------------------------------------------
@@ -281,23 +266,6 @@ class TestGetLoaderWithFallback:
             with patch.dict(FALLBACK_CHAINS, {"a_share": ["fake_unavailable"]}):
                 with pytest.raises(NoAvailableSourceError):
                     get_loader_cls_with_fallback("fake_unavailable")
-
-    def test_explicit_local_does_not_fall_through_to_network(self) -> None:
-        """An explicit unavailable 'local' request must raise a clear error, never
-        silently degrade to an unrelated network loader via its broad markets."""
-        with patch.dict(LOADER_REGISTRY, {
-            "local": _FakeLocalLoader,
-            "fake_available": _FakeAvailableLoader,  # available a_share network src
-        }, clear=True):
-            # Even though a network loader is available for one of local's markets,
-            # the explicit 'local' request must not borrow it.
-            with patch.dict(FALLBACK_CHAINS, {"a_share": ["fake_available"]}):
-                with pytest.raises(NoAvailableSourceError) as excinfo:
-                    get_loader_cls_with_fallback("local")
-        msg = str(excinfo.value)
-        assert "local" in msg
-        # The error must point the user at the Data Bridge config, not a network hop.
-        assert "data-bridge" in msg.lower() or "config" in msg.lower()
 
 
 # ---------------------------------------------------------------------------

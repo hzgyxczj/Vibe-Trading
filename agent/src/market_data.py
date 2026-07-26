@@ -19,7 +19,6 @@ DEFAULT_MAX_ROWS = 250
 # the throttle-tolerant Yahoo public endpoint first (lower IP-ban risk than the
 # yfinance SDK), A-shares to the Tencent quote endpoint.
 _SOURCE_PATTERNS = [
-    (re.compile(r"^local:", re.I), "local"),
     (re.compile(r"^\d{6}\.(SZ|SH|BJ)$", re.I), "tencent"),
     (re.compile(r"^[A-Z]+\.US$", re.I), "yahoo"),
     (re.compile(r"^\d{3,5}\.HK$", re.I), "yahoo"),
@@ -113,12 +112,7 @@ def fetch_market_data(
     from backtest.loaders.registry import FALLBACK_CHAINS
 
     results: dict[str, Any] = {}
-    result_aliases = {
-        code: code.split(":", 1)[1]
-        if code.lower().startswith("local:")
-        else code
-        for code in codes
-    }
+    result_aliases = {code: code for code in codes}
 
     if source == "auto":
         groups: dict[str, list[str]] = {}

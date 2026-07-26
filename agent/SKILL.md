@@ -81,7 +81,6 @@ Create and run quantitative strategies across 8 engines (ChinaA, GlobalEquity, I
 - **China A-shares** via AKShare / baostock / tencent / sina / eastmoney / mootdx (free, no API key) — `TUSHARE_TOKEN` optional for premium quality
 - **Futures, forex, macro** via AKShare (free, no API key)
 - **HK & A-share equities** via Futu (broker login required, optional)
-- **Local CSV/parquet bars** via the `local` loader (offline, no network)
 - **Premium cross-market data** via QVeris (optional API key)
 - **Premium US data** via optional-key finnhub / alphavantage / tiingo / fmp (graceful fallback to free sources)
 

@@ -29,7 +29,6 @@ per-source skill.
 | mootdx | A-shares (TDX servers, never-banned) | No | China network | data-routing |
 | futu | A/HK/US via OpenD gateway | Yes (OpenD running) | Local gateway | data-routing (runner-internal) |
 | mt5 | Forex & metals (your broker's MT5 feed) | Yes (running, logged-in MT5 terminal; optional `~/.vibe-trading/mt5.json`) | Local terminal (Windows) | data-routing (runner-internal) |
-| local | User CSV/parquet on disk | No | Offline | data-routing (runner-internal) |
 | eastmoney | A-shares, HK, US equities | No (IP-throttled) | Unrestricted | data-routing |
 | sina | US equities (daily OHLCV) | No (IP-throttled) | Unrestricted | data-routing |
 | stooq | US equities (daily OHLCV) | No | Unrestricted | data-routing |
