@@ -28,6 +28,7 @@ The verdict is a :class:`BreachEvent` whose ``kind`` is one of
 from __future__ import annotations
 
 import logging
+import os
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 
@@ -772,6 +773,13 @@ def market_cap_usd(symbol: str, asset_class: AssetClass) -> float | None:
     if asset_class not in (AssetClass.US_EQUITY, AssetClass.US_ETF):
         # No unified market-cap source for crypto/other here — fail-closed.
         return None
+    # Check if yfinance is disabled via environment variable
+    disabled = os.getenv("VIBE_TRADING_DISABLED_LOADERS", "")
+    if disabled:
+        disabled_names = {name.strip().lower() for name in disabled.split(",")}
+        if "yfinance" in disabled_names:
+            logger.info("market-cap lookup skipped: yfinance disabled by VIBE_TRADING_DISABLED_LOADERS")
+            return None
     try:
         import yfinance  # type: ignore
     except Exception:

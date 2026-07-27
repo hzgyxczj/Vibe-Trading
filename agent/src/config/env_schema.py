@@ -177,6 +177,11 @@ class DataConfig(_EnvBase):
     longbridge_app_key: str = Field(alias="LONGBRIDGE_APP_KEY", default="")
     longbridge_app_secret: str = Field(alias="LONGBRIDGE_APP_SECRET", default="")
     longbridge_access_token: str = Field(alias="LONGBRIDGE_ACCESS_TOKEN", default="")
+    vibe_trading_disabled_loaders: str = Field(
+        alias="VIBE_TRADING_DISABLED_LOADERS",
+        default="",
+        description="Comma-separated list of loader names to disable (e.g. 'okx,yfinance')",
+    )
 
 
 # ---------------------------------------------------------------------------
