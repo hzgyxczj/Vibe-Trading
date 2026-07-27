@@ -10,11 +10,33 @@ of import order.
 from __future__ import annotations
 
 import logging
+import os
 from typing import Any, Type
 
 from backtest.loaders.base import NoAvailableSourceError
 
 logger = logging.getLogger(__name__)
+
+
+# ---------------------------------------------------------------------------
+# Loader disable utility
+# ---------------------------------------------------------------------------
+
+
+def is_loader_disabled(loader_name: str) -> bool:
+    """Check if a loader is disabled via VIBE_TRADING_DISABLED_LOADERS env var.
+
+    Args:
+        loader_name: The name of the loader to check (e.g. "okx", "yfinance").
+
+    Returns:
+        True if the loader is in the disabled list, False otherwise.
+    """
+    disabled = os.getenv("VIBE_TRADING_DISABLED_LOADERS", "")
+    if not disabled:
+        return False
+    disabled_names = {name.strip().lower() for name in disabled.split(",")}
+    return loader_name.lower() in disabled_names
 
 # ---------------------------------------------------------------------------
 # Global registry: source_name -> loader class

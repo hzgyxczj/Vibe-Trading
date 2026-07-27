@@ -15,6 +15,7 @@ from typing import List, Optional
 from rich.console import Console
 from rich.table import Table
 
+from backtest.loaders.registry import is_loader_disabled
 from src.config.accessor import get_env_config, reset_env_config
 
 
@@ -136,6 +137,13 @@ def _check_llm_provider() -> CheckResult:
 
 def _check_okx() -> CheckResult:
     """Check OKX public API reachability."""
+    if is_loader_disabled("okx"):
+        return CheckResult(
+            name="OKX API",
+            status="skipped",
+            message="disabled by VIBE_TRADING_DISABLED_LOADERS",
+            impact="crypto backtest will use fallback sources",
+        )
     try:
         import requests
 
@@ -164,6 +172,13 @@ def _check_okx() -> CheckResult:
 
 def _check_yfinance() -> CheckResult:
     """Check yfinance availability."""
+    if is_loader_disabled("yfinance"):
+        return CheckResult(
+            name="yfinance",
+            status="skipped",
+            message="disabled by VIBE_TRADING_DISABLED_LOADERS",
+            impact="US/HK equity backtest will use fallback sources",
+        )
     try:
         import yfinance  # noqa: F401
     except ImportError:

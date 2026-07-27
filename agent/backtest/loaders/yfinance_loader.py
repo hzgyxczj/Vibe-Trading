@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import logging
-import os
 from collections import defaultdict
 from typing import Dict, List, Optional, Union
 
@@ -18,7 +17,7 @@ from backtest.loaders.base import (
     validate_date_range,
     validate_ohlc,
 )
-from backtest.loaders.registry import register
+from backtest.loaders.registry import is_loader_disabled, register
 
 _OHLCV_COLUMNS = ["open", "high", "low", "close", "volume"]
 _COLUMN_RENAMES = {
@@ -219,22 +218,6 @@ def _normalize_frame(frame: pd.DataFrame, requested_interval: str) -> pd.DataFra
     return normalized
 
 
-def _is_loader_disabled(loader_name: str) -> bool:
-    """Check if a loader is disabled via VIBE_TRADING_DISABLED_LOADERS env var.
-
-    Args:
-        loader_name: The name of the loader to check (e.g. "okx", "yfinance").
-
-    Returns:
-        True if the loader is in the disabled list, False otherwise.
-    """
-    disabled = os.getenv("VIBE_TRADING_DISABLED_LOADERS", "")
-    if not disabled:
-        return False
-    disabled_names = {name.strip().lower() for name in disabled.split(",")}
-    return loader_name.lower() in disabled_names
-
-
 @register
 class DataLoader:
     """Fetch HK/US equity bars from Yahoo Finance via yfinance."""
@@ -245,7 +228,7 @@ class DataLoader:
 
     def is_available(self) -> bool:
         """Check if yfinance loader is disabled or available."""
-        if _is_loader_disabled(self.name):
+        if is_loader_disabled(self.name):
             logger.info("yfinance loader disabled by VIBE_TRADING_DISABLED_LOADERS")
             return False
         return True
