@@ -16,7 +16,8 @@ Requirements:
     ``Lib/site-packages/xtquant``.
 
 Scope: A-share OHLCV (沪/深/京). Supports 1m/5m/15m/30m/1H/4H/1D/1W.
-Real-time tick data is not exposed through this loader.
+Real-time tick snapshots and push subscriptions are available via
+:meth:`snapshot` and :meth:`subscribe` (requires QMT terminal running).
 """
 
 from __future__ import annotations
@@ -182,20 +183,23 @@ class DataLoader:
                 logger.warning("qmt failed for %s: %s", code, exc)
         return result
 
-    def _fetch_one(
-        self, code: str, start_date: str, end_date: str, interval: str,
-    ) -> Optional[pd.DataFrame]:
-        """Call the QMT bridge script via subprocess and parse the result."""
-        qmt_symbol = _normalize_qmt_symbol(code)
-        request = {
-            "codes": [qmt_symbol],
-            "start_date": start_date,
-            "end_date": end_date,
-            "interval": interval,
-        }
+    def _call_bridge(self, request: dict) -> Optional[dict]:
+        """Call the QMT bridge subprocess and return parsed JSON, or None.
+
+        Centralizes the subprocess invocation, timeout handling, and JSON
+        parsing shared by ``fetch`` (history), ``snapshot``, and ``subscribe``.
+        """
+        if not self._qmt_dir:
+            logger.warning("qmt: qmt_dir not configured in %s", _CONFIG_PATH)
+            return None
 
         python_exe = os.path.join(self._qmt_dir, "bin.x64", "pythonw.exe")
         qmt_cwd = os.path.join(self._qmt_dir, "bin.x64")
+
+        # Subscribe mode needs extra time for the collection window.
+        timeout = _SUBPROCESS_TIMEOUT
+        if request.get("action") == "subscribe":
+            timeout = _SUBPROCESS_TIMEOUT + float(request.get("duration", 5.0)) + 10
 
         try:
             proc = subprocess.Popen(
@@ -208,31 +212,46 @@ class DataLoader:
             )
             out, err = proc.communicate(
                 input=json.dumps(request),
-                timeout=_SUBPROCESS_TIMEOUT,
+                timeout=timeout,
             )
         except subprocess.TimeoutExpired:
-            logger.warning("qmt: subprocess timed out for %s (terminal running?)", code)
+            logger.warning("qmt: subprocess timed out (terminal running?)")
             return None
         except Exception as exc:
-            logger.warning("qmt: subprocess error for %s: %s", code, exc)
+            logger.warning("qmt: subprocess error: %s", exc)
             return None
 
         if proc.returncode != 0:
-            logger.warning("qmt: bridge exited %d for %s: %s", proc.returncode, code, err)
+            logger.warning("qmt: bridge exited %d: %s", proc.returncode, err)
             return None
-
         if not out.strip():
-            logger.warning("qmt: empty output for %s", code)
+            logger.warning("qmt: empty output from bridge")
             return None
-
         try:
             data = json.loads(out)
         except json.JSONDecodeError as exc:
-            logger.warning("qmt: JSON parse error for %s: %s", code, exc)
+            logger.warning("qmt: JSON parse error: %s", exc)
             return None
-
         if "error" in data:
-            logger.warning("qmt: bridge error for %s: %s", code, data["error"])
+            logger.warning("qmt: bridge error: %s", data["error"])
+            return None
+        return data
+
+    def _fetch_one(
+        self, code: str, start_date: str, end_date: str, interval: str,
+    ) -> Optional[pd.DataFrame]:
+        """Call the QMT bridge for history bars and parse into a DataFrame."""
+        qmt_symbol = _normalize_qmt_symbol(code)
+        request = {
+            "action": "history",
+            "codes": [qmt_symbol],
+            "start_date": start_date,
+            "end_date": end_date,
+            "interval": interval,
+        }
+
+        data = self._call_bridge(request)
+        if data is None:
             return None
 
         symbol_key = qmt_symbol
@@ -295,3 +314,57 @@ class DataLoader:
         resampled = resampled.dropna(subset=["open", "high", "low", "close"])
         resampled.index.name = df.index.name
         return resampled
+
+    # ------------------------------------------------------------------
+    # Real-time tick data (requires QMT terminal running)
+    # ------------------------------------------------------------------
+
+    def snapshot(self, codes: List[str]) -> Dict[str, dict]:
+        """Fetch real-time tick snapshots (last price, bid/ask, volume, etc.).
+
+        Args:
+            codes: Symbol list (``.SH/.SZ/.BJ`` suffix or bare 6-digit).
+
+        Returns:
+            Mapping symbol -> tick dict. Empty dict on failure or if no
+            A-share codes were provided.
+        """
+        self._ensure_config()
+        qmt_codes = [_normalize_qmt_symbol(c) for c in codes if _is_a_share(c)]
+        if not qmt_codes:
+            return {}
+
+        data = self._call_bridge({"action": "snapshot", "codes": qmt_codes})
+        if data is None:
+            return {}
+        return data.get("ticks", {})
+
+    def subscribe(
+        self,
+        codes: List[str],
+        *,
+        duration: float = 5.0,
+    ) -> Dict[str, List[dict]]:
+        """Subscribe to tick pushes for ``duration`` seconds and return collected ticks.
+
+        Args:
+            codes: Symbol list (``.SH/.SZ/.BJ`` suffix or bare 6-digit).
+            duration: Seconds to collect tick pushes (default 5.0).
+
+        Returns:
+            Mapping symbol -> list of tick dicts collected during the window.
+            Empty dict on failure or if no A-share codes were provided.
+        """
+        self._ensure_config()
+        qmt_codes = [_normalize_qmt_symbol(c) for c in codes if _is_a_share(c)]
+        if not qmt_codes:
+            return {}
+
+        data = self._call_bridge({
+            "action": "subscribe",
+            "codes": qmt_codes,
+            "duration": duration,
+        })
+        if data is None:
+            return {}
+        return data.get("ticks", {})

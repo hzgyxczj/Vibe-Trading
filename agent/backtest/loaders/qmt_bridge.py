@@ -1,8 +1,15 @@
 """Bridge script run by QMT's bundled Python 3.6 to fetch data via xtquant.
 
 Called as a subprocess by ``qmt_loader.py`` (which runs under Python 3.12).
-Reads a JSON request from stdin, fetches data via ``xtdata.get_market_data_ex``,
-and writes a JSON response to stdout.
+Reads a JSON request from stdin, fetches data via xtdata, and writes a JSON
+response to stdout.
+
+Supported actions (``action`` field in the request):
+  - ``history`` (default): historical OHLCV bars via ``get_market_data_ex``.
+  - ``snapshot``: real-time tick snapshot (last price / bid / ask) via
+    ``get_full_tick``.
+  - ``subscribe``: subscribe to tick pushes for a given duration, return
+    all ticks collected during the window.
 
 Must be invoked with ``cwd`` set to the QMT ``bin.x64`` directory so that
 ``Lib/site-packages/xtquant`` is on the import path.
@@ -11,6 +18,7 @@ Must be invoked with ``cwd`` set to the QMT ``bin.x64`` directory so that
 import sys
 import os
 import json
+import time
 import datetime
 
 # Make xtquant importable when cwd is the QMT bin.x64 directory.
@@ -44,26 +52,72 @@ def _ts_to_str(ts):
     return str(ts)
 
 
-def main():
-    params = json.loads(sys.stdin.read())
+def _connect(xtdata):
+    """Ensure the xtdata client connects to the QMT terminal.
 
+    Returns ``True`` if connected (or no client object), ``False`` on failure
+    (and prints a JSON error to stdout).
+    """
+    client = xtdata.get_client()
+    if client is None:
+        return True
+    try:
+        client.set_remote_addr("localhost", 58610)
+        client.reset()
+        succ, errmsg = client.connect_ex()
+        if not succ:
+            print(json.dumps({"error": "cannot connect to QMT terminal on port 58610: " + str(errmsg)}))
+            return False
+        return True
+    except Exception as exc:
+        print(json.dumps({"error": "connection error: " + str(exc)}))
+        return False
+
+
+def _safe_float(v):
+    """Coerce a value to float, returning ``None`` on failure."""
+    if v is None:
+        return None
+    try:
+        return float(v)
+    except (TypeError, ValueError):
+        return None
+
+
+def _clean_tick(t):
+    """Convert a raw tick dict from xtdata to a JSON-serializable dict."""
+    if not isinstance(t, dict):
+        return None
+
+    def _num_list(seq):
+        if not seq:
+            return []
+        return [_safe_float(x) for x in seq]
+
+    return {
+        "lastPrice": _safe_float(t.get("lastPrice")),
+        "open": _safe_float(t.get("open")),
+        "high": _safe_float(t.get("high")),
+        "low": _safe_float(t.get("low")),
+        "lastClose": _safe_float(t.get("lastClose")),
+        "amount": _safe_float(t.get("amount")),
+        "volume": _safe_float(t.get("volume")),
+        "pvolume": _safe_float(t.get("pvolume")),
+        "stockStatus": t.get("stockStatus"),
+        "timetag": t.get("timetag"),
+        "bidPrice": _num_list(t.get("bidPrice")),
+        "askPrice": _num_list(t.get("askPrice")),
+        "bidVol": _num_list(t.get("bidVol")),
+        "askVol": _num_list(t.get("askVol")),
+    }
+
+
+def _do_history(params):
+    """Fetch historical OHLCV bars via ``get_market_data_ex``."""
     from xtquant import xtdata
 
-    # Ensure the xtdata client connects to the QMT terminal.
-    # If ~/.xtquant config is missing (XtMiniQmt hasn't created it yet),
-    # manually set the default port 58610 from xtdata.ini.
-    client = xtdata.get_client()
-    if client is not None:
-        try:
-            client.set_remote_addr("localhost", 58610)
-            client.reset()
-            succ, errmsg = client.connect_ex()
-            if not succ:
-                print(json.dumps({"error": "cannot connect to QMT terminal on port 58610: " + str(errmsg)}))
-                return
-        except Exception as exc:
-            print(json.dumps({"error": "connection error: " + str(exc)}))
-            return
+    if not _connect(xtdata):
+        return
 
     # Project interval -> QMT period
     interval_map = {
@@ -151,6 +205,91 @@ def main():
         }
 
     print(json.dumps(result, ensure_ascii=False))
+
+
+def _do_snapshot(params):
+    """Fetch real-time tick snapshots via ``get_full_tick``."""
+    from xtquant import xtdata
+
+    if not _connect(xtdata):
+        return
+
+    codes = params["codes"]
+    try:
+        ticks = xtdata.get_full_tick(codes)
+    except Exception as exc:
+        print(json.dumps({"error": "get_full_tick error: " + str(exc)}))
+        return
+
+    if not ticks:
+        print(json.dumps({"error": "no tick data returned (terminal not ready?)"}))
+        return
+
+    result = {}
+    for code, t in ticks.items():
+        cleaned = _clean_tick(t)
+        if cleaned is not None:
+            result[code] = cleaned
+
+    print(json.dumps({"ticks": result}, ensure_ascii=False))
+
+
+def _do_subscribe(params):
+    """Subscribe to tick pushes for a duration and return collected ticks."""
+    from xtquant import xtdata
+
+    if not _connect(xtdata):
+        return
+
+    codes = params["codes"]
+    duration = float(params.get("duration", 5.0))
+
+    collected = {code: [] for code in codes}
+
+    def on_tick(datas):
+        for c, vlist in (datas or {}).items():
+            if vlist and c in collected:
+                for tick in vlist:
+                    cleaned = _clean_tick(tick)
+                    if cleaned is not None:
+                        collected[c].append(cleaned)
+
+    seqs = []
+    for code in codes:
+        try:
+            seq = xtdata.subscribe_quote(code, period="tick", callback=on_tick)
+            seqs.append(seq)
+        except Exception as exc:
+            print(json.dumps({"error": "subscribe failed for %s: %s" % (code, str(exc))}))
+            return
+
+    # Collect tick pushes for the requested duration.
+    time.sleep(duration)
+
+    for seq in seqs:
+        try:
+            xtdata.unsubscribe_quote(seq)
+        except Exception:
+            pass
+
+    print(json.dumps({"ticks": collected}, ensure_ascii=False))
+
+
+_ACTION_TABLE = {
+    "history": _do_history,
+    "snapshot": _do_snapshot,
+    "subscribe": _do_subscribe,
+}
+
+
+def main():
+    params = json.loads(sys.stdin.read())
+    action = params.get("action", "history")
+    handler = _ACTION_TABLE.get(action)
+    if handler is None:
+        print(json.dumps({"error": "unknown action: " + str(action)}))
+        return
+    handler(params)
 
 
 if __name__ == "__main__":
